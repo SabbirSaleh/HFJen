@@ -2,40 +2,48 @@ pipeline {
     agent any
 
     environment {
-       REPO_URL = 'https://github.com/SabbirSaleh/HFJen.git'
-    REPO_BRANCH = 'main'
-    FABRIC_CFG_PATH = "${WORKSPACE}/fabric-samples/test-network/config"
-    PATH = "${WORKSPACE}/bin:$PATH"
+        REPO_URL = 'https://github.com/SabbirSaleh/HFJen.git'
+        REPO_BRANCH = 'main'
+        FABRIC_CFG_PATH = "${WORKSPACE}/fabric-samples/test-network/config"
+        PATH = "${WORKSPACE}/bin:${env.PATH}" // Ensure Fabric binaries are in PATH
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                echo "Cloning Repository from ${REPO_URL}"
-                git branch: "${REPO_BRANCH}", url: "${REPO_URL}"
+                script {
+                    echo "🔄 Cloning Repository from ${REPO_URL}"
+                    git branch: "${REPO_BRANCH}", url: "${REPO_URL}"
+                }
             }
         }
-        stage('Install Fabric Binaries') {
-    steps {
-        script {
-            echo "Installing Hyperledger Fabric Binaries"
-            sh '''
-            curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.5.11 1.5.15
-            export PATH=$PWD/bin:$PATH
-            '''
+
+        stage('Set Up Fabric Binaries') {
+            steps {
+                script {
+                    echo "⚙️ Setting Up Hyperledger Fabric Binaries"
+                    sh '''
+                    # Ensure bin directory exists
+                    mkdir -p bin
+                    curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.5.11 1.5.15
+                    export PATH=$PWD/bin:$PATH
+                    chmod +x bin/*
+                    '''
+                }
+            }
         }
-    }
-}
 
         stage('Set Up Fabric Network') {
             steps {
                 script {
-                    echo "Bringing Down Any Existing Network"
+                    echo "🛠️ Bringing Down Any Existing Network"
                     sh './network.sh down || echo "Network already down"'
 
-                    echo "Starting Fabric Network"
+                    echo "🚀 Starting Fabric Network"
                     sh 'chmod +x network.sh'
                     sh './network.sh up createChannel'
+
+                    echo "✅ Network Setup Complete"
                 }
             }
         }
@@ -43,8 +51,10 @@ pipeline {
         stage('Deploy Chaincode') {
             steps {
                 script {
-                    echo "Deploying Chaincode"
+                    echo "📦 Deploying Chaincode"
                     sh './network.sh deployCC -ccn basic -ccp ./asset-transfer-basic/chaincode-go -ccl go'
+
+                    echo "✅ Chaincode Deployed"
                 }
             }
         }
@@ -52,13 +62,13 @@ pipeline {
         stage('Verify Network & Chaincode') {
             steps {
                 script {
-                    echo "Checking Running Docker Containers"
+                    echo "🔍 Checking Running Docker Containers"
                     sh 'docker ps'
 
-                    echo "Querying Installed Chaincode"
+                    echo "🔍 Querying Installed Chaincode"
                     sh 'docker exec cli peer lifecycle chaincode queryinstalled'
 
-                    echo "Query Committed Chaincode"
+                    echo "🔍 Querying Committed Chaincode"
                     sh 'docker exec cli peer lifecycle chaincode querycommitted --channelID mychannel --name basic'
                 }
             }
@@ -67,7 +77,7 @@ pipeline {
         stage('Clean Up') {
             steps {
                 script {
-                    echo "Stopping the Network"
+                    echo "🧹 Stopping the Network"
                     sh './network.sh down || echo "Network already down"'
                 }
             }

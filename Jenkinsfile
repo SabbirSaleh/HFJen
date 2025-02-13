@@ -4,7 +4,7 @@ pipeline {
     environment {
         REPO_URL = 'https://github.com/SabbirSaleh/HFJen.git'
         REPO_BRANCH = 'main'
-        FABRIC_CFG_PATH = "${WORKSPACE}/fabric-samples/test-network/config"
+        FABRIC_CFG_PATH = "${WORKSPACE}/test-network/config"
     }
 
     stages {
@@ -19,7 +19,7 @@ pipeline {
             steps {
                 script {
                     echo "Bringing Down Any Existing Network"
-                    sh './network.sh down || true'
+                    sh './network.sh down || echo "Network already down"'
 
                     echo "Starting Fabric Network"
                     sh 'chmod +x network.sh'
@@ -32,7 +32,7 @@ pipeline {
             steps {
                 script {
                     echo "Deploying Chaincode"
-                    sh './network.sh deployCC -ccn basic -ccp ../asset-transfer-basic/chaincode-go -ccl go'
+                    sh './network.sh deployCC -ccn basic -ccp ./asset-transfer-basic/chaincode-go -ccl go'
                 }
             }
         }
@@ -44,10 +44,10 @@ pipeline {
                     sh 'docker ps'
 
                     echo "Querying Installed Chaincode"
-                    sh 'peer lifecycle chaincode queryinstalled'
+                    sh 'docker exec cli peer lifecycle chaincode queryinstalled'
 
                     echo "Query Committed Chaincode"
-                    sh 'peer lifecycle chaincode querycommitted --channelID mychannel --name basic'
+                    sh 'docker exec cli peer lifecycle chaincode querycommitted --channelID mychannel --name basic'
                 }
             }
         }
@@ -56,7 +56,7 @@ pipeline {
             steps {
                 script {
                     echo "Stopping the Network"
-                    sh './network.sh down'
+                    sh './network.sh down || echo "Network already down"'
                 }
             }
         }
@@ -64,11 +64,10 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline execution completed successfully!'
+            echo '✅ Pipeline execution completed successfully!'
         }
         failure {
-            echo 'Pipeline execution failed!'
+            echo '❌ Pipeline execution failed!'
         }
     }
 }
-

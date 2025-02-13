@@ -18,35 +18,36 @@ pipeline {
             }
         }
 
-        stage('Set Up Fabric Binaries') {
-            steps {
-                script {
-                    echo "⚙️ Setting Up Hyperledger Fabric Binaries"
-                    sh '''
-                    # Ensure bin directory exists
-                    mkdir -p bin
-                    curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.5.11 1.5.15
-                    export PATH=$PWD/bin:$PATH
-                    chmod +x bin/*
-                    '''
-                }
-            }
+        stage('Install Fabric Binaries') {
+    steps {
+        script {
+            echo "Setting up Hyperledger Fabric Binaries"
+            sh '''
+            export PATH=$WORKSPACE/bin:$PATH
+            echo "Updated PATH: $PATH"
+            which configtxgen  # Debug to check if binaries are accessible
+            which peer  # Debug to check peer command availability
+            '''
         }
+    }
+}
+
 
         stage('Set Up Fabric Network') {
-            steps {
-                script {
-                    echo "🛠️ Bringing Down Any Existing Network"
-                    sh './network.sh down || echo "Network already down"'
+    steps {
+        script {
+            echo "Bringing Down Any Existing Network"
+            sh 'chmod +x network.sh'
+            sh './network.sh down || echo "Network already down"'
 
-                    echo "🚀 Starting Fabric Network"
-                    sh 'chmod +x network.sh'
-                    sh './network.sh up createChannel'
-
-                    echo "✅ Network Setup Complete"
-                }
-            }
+            echo "Starting Fabric Network"
+            sh 'chmod +x network.sh'
+            sh 'ls -l'  # Debugging step to see if network.sh exists
+            sh './network.sh up createChannel'
         }
+    }
+}
+
 
         stage('Deploy Chaincode') {
             steps {

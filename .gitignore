@@ -1,3 +1,9 @@
+*.log
+*.tar.gz
+node_modules/
+bin/
+configtxgen/
+cryptogen/
 /channel-artifacts/*.tx
 /channel-artifacts/*.block
 /ledgers

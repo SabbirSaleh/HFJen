@@ -2,9 +2,10 @@ pipeline {
     agent any
 
     environment {
-        REPO_URL = 'https://github.com/SabbirSaleh/HFJen.git'
-        REPO_BRANCH = 'main'
-        FABRIC_CFG_PATH = "${WORKSPACE}/test-network/config"
+       REPO_URL = 'https://github.com/SabbirSaleh/HFJen.git'
+    REPO_BRANCH = 'main'
+    FABRIC_CFG_PATH = "${WORKSPACE}/fabric-samples/test-network/config"
+    PATH = "${WORKSPACE}/bin:$PATH"
     }
 
     stages {
@@ -14,6 +15,17 @@ pipeline {
                 git branch: "${REPO_BRANCH}", url: "${REPO_URL}"
             }
         }
+        stage('Install Fabric Binaries') {
+    steps {
+        script {
+            echo "Installing Hyperledger Fabric Binaries"
+            sh '''
+            curl -sSL https://bit.ly/2ysbOFE | bash -s -- 2.5.11 1.5.15
+            export PATH=$PWD/bin:$PATH
+            '''
+        }
+    }
+}
 
         stage('Set Up Fabric Network') {
             steps {
